@@ -328,12 +328,12 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             // Iterate through the top photos
             // System.out.println(num);
-            for (int i = 0; i < num; i++) {
+            while(topPhotosRs.next() && num-- > 0){
                 
                 // read the next row of topPhotosRs
                 if (topPhotosRs.next()) {
-                    System.out.println(i);
-                    System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
+                    // System.out.println(i);
+                    // System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
 
                     Long photoId = topPhotosRs.getLong("PHOTO_ID");
                     Long albumId = topPhotosRs.getLong("ALBUM_ID");
@@ -352,11 +352,13 @@ public final class StudentFakebookOracle extends FakebookOracle {
                         "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
                         "ORDER BY U.USER_ID ASC");
 
+
                     // Iterate through the tagged users and add to the taggedPhotoInfo
                     while (taggedUsersRs.next()) {
                         Long userId = taggedUsersRs.getLong("USER_ID");
                         String firstName = taggedUsersRs.getString("FIRST_NAME");
                         String lastName = taggedUsersRs.getString("LAST_NAME");
+                        
                         UserInfo userInfo = new UserInfo(userId, firstName, lastName);
                         taggedPhotoInfo.addTaggedUser(userInfo);
                     }
