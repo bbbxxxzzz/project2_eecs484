@@ -318,62 +318,58 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 results.add(tp);
             */
 
-            // Query to get top <num> photos with most tagged users
-
-            String topPhotosQuery = 
+            ResultSet topPhotosRs = stmt.executeQuery(
                 "SELECT P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME, COUNT(T.TAG_SUBJECT_ID) AS TAG_COUNT " +
                 "FROM " + PhotosTable + " P " +
                 "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                 "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
                 "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
-                "ORDER BY TAG_COUNT DESC, P.PHOTO_ID ASC " + 
-                "FETCH FIRST " + num + " ROWS ONLY";
-
-            ResultSet topPhotosRs = stmt.executeQuery(topPhotosQuery);
+                "ORDER BY TAG_COUNT DESC, P.PHOTO_ID ASC ");
 
             // Iterate through the top photos
-        
-            while (topPhotosRs.next()) {
-                Long photoId = topPhotosRs.getLong("PHOTO_ID");
-                Long albumId = topPhotosRs.getLong("ALBUM_ID");
-                String photoLink = topPhotosRs.getString("PHOTO_LINK");
-                String albumName = topPhotosRs.getString("ALBUM_NAME");
+            while(num!=0){
+                while (topPhotosRs.next()) {
+                    Long photoId = topPhotosRs.getLong("PHOTO_ID");
+                    Long albumId = topPhotosRs.getLong("ALBUM_ID");
+                    String photoLink = topPhotosRs.getString("PHOTO_LINK");
+                    String albumName = topPhotosRs.getString("ALBUM_NAME");
 
-                PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
-                TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
+                    PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
+                    TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
 
-                // Query to get tagged users for each top photo
-                String taggedUsersQuery = 
-                    "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
-                    "FROM " + UsersTable + " U " +
-                    "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
-                    "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
-                    "ORDER BY U.USER_ID ASC";
+                    // Query to get tagged users for each top photo
 
-                ResultSet taggedUsersRs = stmt.executeQuery(taggedUsersQuery);
+                    ResultSet taggedUsersRs = stmt.executeQuery(
+                        "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                        "FROM " + UsersTable + " U " +
+                        "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
+                        "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
+                        "ORDER BY U.USER_ID ASC");
 
-                // Iterate through the tagged users and add to the taggedPhotoInfo
-                while (taggedUsersRs.next()) {
-                    Long userId = taggedUsersRs.getLong("USER_ID");
-                    String firstName = taggedUsersRs.getString("FIRST_NAME");
-                    String lastName = taggedUsersRs.getString("LAST_NAME");
-                    UserInfo userInfo = new UserInfo(userId, firstName, lastName);
-                    taggedPhotoInfo.addTaggedUser(userInfo);
+                    // Iterate through the tagged users and add to the taggedPhotoInfo
+                    while (taggedUsersRs.next()) {
+                        Long userId = taggedUsersRs.getLong("USER_ID");
+                        String firstName = taggedUsersRs.getString("FIRST_NAME");
+                        String lastName = taggedUsersRs.getString("LAST_NAME");
+                        UserInfo userInfo = new UserInfo(userId, firstName, lastName);
+                        taggedPhotoInfo.addTaggedUser(userInfo);
+                    }
+
+                    results.add(taggedPhotoInfo);
+                    taggedUsersRs.close();
+                    stmt.close();
                 }
-
-                results.add(taggedPhotoInfo);
-                taggedUsersRs.close();
-                stmt.close();
+                num--;
             }
 
-            topPhotosRs.close();
-            stmt.close();
-        } catch (SQLException e) {
-            System.err.println(e.getMessage());
-        }
+                topPhotosRs.close();
+                stmt.close();
+            } catch (SQLException e) {
+                System.err.println(e.getMessage());
+            }
 
-        return results;
-    }
+            return results;
+        }
 
     @Override
     // Query 5
