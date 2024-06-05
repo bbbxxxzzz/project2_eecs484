@@ -385,7 +385,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 mp.addSharedPhoto(p);
                 results.add(mp);
             */
-
+            
             // Query to find potential pairs of users who meet the criteria
             String potentialPairsQuery = 
                 "SELECT U1.USER_ID AS USER1_ID, U1.FIRST_NAME AS USER1_FIRST, U1.LAST_NAME AS USER1_LAST, " +
@@ -402,13 +402,14 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "GROUP BY U1.USER_ID, U1.FIRST_NAME, U1.LAST_NAME, U1.YEAR_OF_BIRTH, " +
                 "U2.USER_ID, U2.FIRST_NAME, U2.LAST_NAME, U2.YEAR_OF_BIRTH " +
                 "HAVING COUNT(DISTINCT T1.TAG_PHOTO_ID) > 0 " +
-                "ORDER BY COMMON_PHOTOS_COUNT DESC, U1.USER_ID ASC, U2.USER_ID ASC " +
-                "FETCH FIRST " + num + " ROWS ONLY";
+                "ORDER BY COMMON_PHOTOS_COUNT DESC, U1.USER_ID ASC, U2.USER_ID ASC ";
 
             ResultSet pairsRs = stmt.executeQuery(potentialPairsQuery);
+            
+            try (Statement stmt2 = oracle.createStatement(FakebookOracleConstants.AllScroll,
+                FakebookOracleConstants.ReadOnly)) {
 
-            // Iterate through the pairs of users
-            while (pairsRs.next()) {
+                // Iterate through the pairs of users
                 long user1Id = pairsRs.getLong("USER1_ID");
                 String user1FirstName = pairsRs.getString("USER1_FIRST");
                 String user1LastName = pairsRs.getString("USER1_LAST");
@@ -423,33 +424,41 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
                 MatchPair matchPair = new MatchPair(user1, user1BirthYear, user2, user2BirthYear);
 
-                // Query to get the photos in which both users are tagged together
-                String commonPhotosQuery = 
-                    "SELECT P.PHOTO_ID, P.PHOTO_LINK, P.ALBUM_ID, A.ALBUM_NAME " +
-                    "FROM " + PhotosTable + " P " +
-                    "JOIN " + TagsTable + " T1 ON P.PHOTO_ID = T1.TAG_PHOTO_ID " +
-                    "JOIN " + TagsTable + " T2 ON P.PHOTO_ID = T2.TAG_PHOTO_ID " +
-                    "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
-                    "WHERE T1.TAG_SUBJECT_ID = " + user1Id + " AND T2.TAG_SUBJECT_ID = " + user2Id + " " +
-                    "ORDER BY P.PHOTO_ID ASC";
+                while (pairsRs.next()) {
+                    // Query to get the photos in which both users are tagged together
+                    String commonPhotosQuery = 
+                        "SELECT P.PHOTO_ID, P.PHOTO_LINK, P.ALBUM_ID, A.ALBUM_NAME " +
+                        "FROM " + PhotosTable + " P " +
+                        "JOIN " + TagsTable + " T1 ON P.PHOTO_ID = T1.TAG_PHOTO_ID " +
+                        "JOIN " + TagsTable + " T2 ON P.PHOTO_ID = T2.TAG_PHOTO_ID " +
+                        "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
+                        "WHERE T1.TAG_SUBJECT_ID = " + user1Id + " AND T2.TAG_SUBJECT_ID = " + user2Id + " " +
+                        "ORDER BY P.PHOTO_ID ASC";
 
-                ResultSet photosRs = stmt.executeQuery(commonPhotosQuery);
+                    ResultSet photosRs = stmt2.executeQuery(commonPhotosQuery);
 
-                // Iterate through the common photos and add to the matchPair
-                while (photosRs.next()) {
-                    long photoId = photosRs.getLong("PHOTO_ID");
-                    String photoLink = photosRs.getString("PHOTO_LINK");
-                    long albumId = photosRs.getLong("ALBUM_ID");
-                    String albumName = photosRs.getString("ALBUM_NAME");
-                    PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
-                    matchPair.addSharedPhoto(photoInfo);
+                    // Iterate through the common photos and add to the matchPair
+                    while (photosRs.next()) {
+                        long photoId = photosRs.getLong("PHOTO_ID");
+                        String photoLink = photosRs.getString("PHOTO_LINK");
+                        long albumId = photosRs.getLong("ALBUM_ID");
+                        String albumName = photosRs.getString("ALBUM_NAME");
+                        PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
+                        matchPair.addSharedPhoto(photoInfo);
+                    }
+
+                    results.add(matchPair);
+                
+                    photosRs.close();
+                    stmt2.close();
                 }
 
-                results.add(matchPair);
-                photosRs.close();
+            } catch (SQLException e) {
+                System.err.println(e.getMessage());
             }
-
+            
             pairsRs.close();
+            stmt.close();
 
         } catch (SQLException e) {
             System.err.println(e.getMessage());
