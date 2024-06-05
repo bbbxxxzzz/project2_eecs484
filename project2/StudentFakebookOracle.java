@@ -332,7 +332,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 // read the next row of topPhotosRs
                 topPhotosRs.next();
                 System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
-                
+
                 Long photoId = topPhotosRs.getLong("PHOTO_ID");
                 Long albumId = topPhotosRs.getLong("ALBUM_ID");
                 String photoLink = topPhotosRs.getString("PHOTO_LINK");
@@ -358,20 +358,24 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     UserInfo userInfo = new UserInfo(userId, firstName, lastName);
                     taggedPhotoInfo.addTaggedUser(userInfo);
                 }
-
+                
                 results.add(taggedPhotoInfo);
+
+
                 taggedUsersRs.close();
-                stmt.close();
+                
             }
 
-                topPhotosRs.close();
-                stmt.close();
-            } catch (SQLException e) {
-                System.err.println(e.getMessage());
-            }
 
-            return results;
+            topPhotosRs.close();
+            stmt.close();
+
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
         }
+
+        return results;
+    }
 
     @Override
     // Query 5
