@@ -331,7 +331,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
             for (int i = 0; i < num; i++) {
                 
                 // read the next row of topPhotosRs
-                System.out.println( topPhotosRs.next());
+                topPhotosRs.next();
+                System.out.println(topPhotosRs.isLast());
                 System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
 
                 Long photoId = topPhotosRs.getLong("PHOTO_ID");
