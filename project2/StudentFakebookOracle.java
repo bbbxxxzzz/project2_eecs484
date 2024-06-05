@@ -331,41 +331,46 @@ public final class StudentFakebookOracle extends FakebookOracle {
             for (int i = 0; i < num; i++) {
                 
                 // read the next row of topPhotosRs
-                topPhotosRs.next();
-                System.out.println(i);
-                System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
+                if (topPhotosRs.next()) {
+                    System.out.println(i);
+                    System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
 
-                Long photoId = topPhotosRs.getLong("PHOTO_ID");
-                Long albumId = topPhotosRs.getLong("ALBUM_ID");
-                String photoLink = topPhotosRs.getString("PHOTO_LINK");
-                String albumName = topPhotosRs.getString("ALBUM_NAME");
+                    Long photoId = topPhotosRs.getLong("PHOTO_ID");
+                    Long albumId = topPhotosRs.getLong("ALBUM_ID");
+                    String photoLink = topPhotosRs.getString("PHOTO_LINK");
+                    String albumName = topPhotosRs.getString("ALBUM_NAME");
 
-                PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
-                TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
+                    PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
+                    TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
 
-                // Query to get tagged users for each top photo
+                    // Query to get tagged users for each top photo
 
-                ResultSet taggedUsersRs = stmt.executeQuery(
-                    "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
-                    "FROM " + UsersTable + " U " +
-                    "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
-                    "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
-                    "ORDER BY U.USER_ID ASC");
+                    ResultSet taggedUsersRs = stmt.executeQuery(
+                        "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                        "FROM " + UsersTable + " U " +
+                        "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
+                        "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
+                        "ORDER BY U.USER_ID ASC");
 
-                // Iterate through the tagged users and add to the taggedPhotoInfo
-                while (taggedUsersRs.next()) {
-                    Long userId = taggedUsersRs.getLong("USER_ID");
-                    String firstName = taggedUsersRs.getString("FIRST_NAME");
-                    String lastName = taggedUsersRs.getString("LAST_NAME");
-                    UserInfo userInfo = new UserInfo(userId, firstName, lastName);
-                    taggedPhotoInfo.addTaggedUser(userInfo);
+                    // Iterate through the tagged users and add to the taggedPhotoInfo
+                    while (taggedUsersRs.next()) {
+                        Long userId = taggedUsersRs.getLong("USER_ID");
+                        String firstName = taggedUsersRs.getString("FIRST_NAME");
+                        String lastName = taggedUsersRs.getString("LAST_NAME");
+                        UserInfo userInfo = new UserInfo(userId, firstName, lastName);
+                        taggedPhotoInfo.addTaggedUser(userInfo);
+                    }
+                    
+                    results.add(taggedPhotoInfo);
+
+
+                    // taggedUsersRs.close();
+                } else {
+
+                    System.out.println("No more photos");
+                    break;
                 }
-                
-                results.add(taggedPhotoInfo);
-
-
-                // taggedUsersRs.close();
-                
+               
             }
 
 
