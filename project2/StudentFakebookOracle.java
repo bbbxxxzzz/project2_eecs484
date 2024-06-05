@@ -395,7 +395,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
             stmt.close();
 
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Error executing query for photos: " + e.getMessage());
         }
 
         return results;
