@@ -362,7 +362,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 results.add(taggedPhotoInfo);
 
 
-                taggedUsersRs.close();
+                // taggedUsersRs.close();
                 
             }
 
