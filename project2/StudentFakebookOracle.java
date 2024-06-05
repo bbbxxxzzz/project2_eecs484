@@ -323,8 +323,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "FROM " + PhotosTable + " P " +
                 "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                 "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
-                "GROUP BY P.PHOTO_ID P.ALBUM_ID P.PHOTO_LINK A.ALBUM_NAME " +
-                "ORDER BY count DESC P.PHOTO_ID ASC ");
+                "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
+                "ORDER BY count DESC, P.PHOTO_ID ASC ");
 
             // Iterate through the top photos
             for (int i = 0; i < num; i++) {
