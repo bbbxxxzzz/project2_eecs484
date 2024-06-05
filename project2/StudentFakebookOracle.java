@@ -328,16 +328,20 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             // Iterate through the top photos
             // System.out.println(num);
-            while (topPhotosRs.next()) {
-                for (int i = 1; i <= topPhotosRs.getMetaData().getColumnCount(); i++) {
-                    System.out.print(topPhotosRs.getString(i) + "\t");
-                }   
-                System.out.println();
-            }
+            
+            // printing out the query results
+            // while (topPhotosRs.next()) {
+            //     for (int i = 1; i <= topPhotosRs.getMetaData().getColumnCount(); i++) {
+            //         System.out.print(topPhotosRs.getString(i) + "\t");
+            //     }   
+            //     System.out.println();
+            // }
+
+
             while(topPhotosRs.next() && num-- > 0){
                 
                 // read the next row of topPhotosRs
-            // if (topPhotosRs.next()) {
+                // if (topPhotosRs.next()) {
                 // System.out.println(i);
                 // System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
 
@@ -356,7 +360,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "FROM " + UsersTable + " U " +
                     "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
                     "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
-                    "ORDER BY U.USER_ID ASC");
+                    "ORDER BY U.USER_ID ASC"
+                );
 
 
                 // Iterate through the tagged users and add to the taggedPhotoInfo
@@ -371,13 +376,13 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 
                 results.add(taggedPhotoInfo);
 
+                System.out.println(results.toString());
+                //     // taggedUsersRs.close();
+                // } else {
 
-            //     // taggedUsersRs.close();
-            // } else {
-
-            //     System.out.println("No more photos");
-            //     break;
-            // }
+                //     System.out.println("No more photos");
+                //     break;
+                // }
                
             }
 
