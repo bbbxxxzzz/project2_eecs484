@@ -300,109 +300,63 @@ public final class StudentFakebookOracle extends FakebookOracle {
     //        (B) For each photo identified in (A), find the IDs, first names, and last names
     //            of the users therein tagged
     public FakebookArrayList<TaggedPhotoInfo> findPhotosWithMostTags(int num) throws SQLException {
-        FakebookArrayList<TaggedPhotoInfo> results = new FakebookArrayList<TaggedPhotoInfo>("\n");
-
-        try (Statement stmt = oracle.createStatement(FakebookOracleConstants.AllScroll,
-                FakebookOracleConstants.ReadOnly)) {
-            /*
-                EXAMPLE DATA STRUCTURE USAGE
-                ============================================
-                PhotoInfo p = new PhotoInfo(80, 5, "www.photolink.net", "Winterfell S1");
-                UserInfo u1 = new UserInfo(3901, "Jon", "Snow");
-                UserInfo u2 = new UserInfo(3902, "Arya", "Stark");
-                UserInfo u3 = new UserInfo(3903, "Sansa", "Stark");
-                TaggedPhotoInfo tp = new TaggedPhotoInfo(p);
-                tp.addTaggedUser(u1);
-                tp.addTaggedUser(u2);
-                tp.addTaggedUser(u3);
-                results.add(tp);
-            */
-
-            ResultSet topPhotosRs = stmt.executeQuery(
-                "SELECT P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME, COUNT(T.TAG_SUBJECT_ID) AS count " +
-                "FROM " + PhotosTable + " P " +
-                "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
-                "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
-                "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
-                "ORDER BY count DESC, P.PHOTO_ID ASC " + 
-                "FETCH FIRST " + num + " ROWS ONLY"
-            );
-        
-            // Iterate through the top photos
-            // System.out.println(num);
+        FakebookArrayList<TaggedPhotoInfo> results = new FakebookArrayList<>("\n");
+    
+        // Outer try-with-resources for the outer Statement and ResultSet
+        try (Statement stmt = oracle.createStatement(FakebookOracleConstants.AllScroll, FakebookOracleConstants.ReadOnly)) {
             
-            // printing out the query results
-            // while (topPhotosRs.next()) {
-            //     for (int i = 1; i <= topPhotosRs.getMetaData().getColumnCount(); i++) {
-            //         System.out.print(topPhotosRs.getString(i) + "\t");
-            //     }   
-            //     System.out.println();
-            // }
-
-            
-            while(topPhotosRs.next() && num-- > 0){
-                
-                // read the next row of topPhotosRs
-                // if (topPhotosRs.next()) {
-                // System.out.println(i);
-                // System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
-
-                Long photoId = topPhotosRs.getLong("PHOTO_ID");
-                Long albumId = topPhotosRs.getLong("ALBUM_ID");
-                String photoLink = topPhotosRs.getString("PHOTO_LINK");
-                String albumName = topPhotosRs.getString("ALBUM_NAME");
-
-                PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
-                TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
-
-                // Query to get tagged users for each top photo
-
-                try (ResultSet taggedUsersRs = stmt.executeQuery(
-                        "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
-                        "FROM " + UsersTable + " U " +
-                        "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
-                        "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
-                        "ORDER BY U.USER_ID ASC"
-                    )) {
-
-                
-                    // Iterate through the tagged users and add to the taggedPhotoInfo
-                    while (taggedUsersRs.next()) {
-                        Long userId = taggedUsersRs.getLong("USER_ID");
-                        String firstName = taggedUsersRs.getString("FIRST_NAME");
-                        String lastName = taggedUsersRs.getString("LAST_NAME");
-                        
-                        UserInfo userInfo = new UserInfo(userId, firstName, lastName);
-                        taggedPhotoInfo.addTaggedUser(userInfo);
+            // Query to fetch the top 'num' photos with the most tags
+            String sql = "SELECT P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME, COUNT(T.TAG_SUBJECT_ID) AS count " +
+                         "FROM " + PhotosTable + " P " +
+                         "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
+                         "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
+                         "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
+                         "ORDER BY count DESC, P.PHOTO_ID ASC";
+    
+            try (ResultSet topPhotosRs = stmt.executeQuery(sql)) {
+                while (topPhotosRs.next() && num-- > 0) {
+                    // Extract photo information
+                    Long photoId = topPhotosRs.getLong("PHOTO_ID");
+                    Long albumId = topPhotosRs.getLong("ALBUM_ID");
+                    String photoLink = topPhotosRs.getString("PHOTO_LINK");
+                    String albumName = topPhotosRs.getString("ALBUM_NAME");
+    
+                    PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
+                    TaggedPhotoInfo taggedPhotoInfo = new TaggedPhotoInfo(photoInfo);
+    
+                    // Inner try-with-resources for the inner Statement and ResultSet
+                    String taggedUsersSql = "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                                            "FROM " + UsersTable + " U " +
+                                            "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
+                                            "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
+                                            "ORDER BY U.USER_ID ASC";
+    
+                    try (Statement stmt2 = oracle.createStatement(FakebookOracleConstants.AllScroll, FakebookOracleConstants.ReadOnly);
+                         ResultSet taggedUsersRs = stmt2.executeQuery(taggedUsersSql)) {
+    
+                        // Iterate through the tagged users and add to the taggedPhotoInfo
+                        while (taggedUsersRs.next()) {
+                            Long userId = taggedUsersRs.getLong("USER_ID");
+                            String firstName = taggedUsersRs.getString("FIRST_NAME");
+                            String lastName = taggedUsersRs.getString("LAST_NAME");
+    
+                            UserInfo userInfo = new UserInfo(userId, firstName, lastName);
+                            taggedPhotoInfo.addTaggedUser(userInfo);
+                        }
+                    } catch (SQLException e) {
+                        System.err.println("Error executing query for tagged users: " + e.getMessage());
                     }
-
-                    taggedUsersRs.close();
-                        
-                } catch (SQLException e) {
-                    System.err.println("Error executing query for tagged users: " + e.getMessage());
+    
+                    results.add(taggedPhotoInfo);
                 }
-                
-                results.add(taggedPhotoInfo);
-
-                System.out.println(results.toString());
-                //     // taggedUsersRs.close();
-                // } else {
-
-                //     System.out.println("No more photos");
-                //     break;
-                // }
-            
             }
-
-            topPhotosRs.close();
-            stmt.close();
-
         } catch (SQLException e) {
-            System.err.println("Error executing query for tagged users: " + e.getMessage());
+            System.err.println("Error executing query for top photos: " + e.getMessage());
         }
-
+    
         return results;
     }
+    
 
     @Override
     // Query 5
