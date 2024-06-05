@@ -324,8 +324,10 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                 "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
                 "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
-                "ORDER BY count DESC, P.PHOTO_ID ASC ");
-
+                "ORDER BY count DESC, P.PHOTO_ID ASC " + 
+                "FETCH FIRST " + num + " ROWS ONLY"
+            );
+        
             // Iterate through the top photos
             // System.out.println(num);
             
@@ -337,7 +339,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
             //     System.out.println();
             // }
 
-
+            
             while(topPhotosRs.next() && num-- > 0){
                 
                 // read the next row of topPhotosRs
@@ -355,14 +357,13 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
                 // Query to get tagged users for each top photo
 
-                try {
-                    ResultSet taggedUsersRs = stmt.executeQuery(
+                try (ResultSet taggedUsersRs = stmt.executeQuery(
                         "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
                         "FROM " + UsersTable + " U " +
                         "JOIN " + TagsTable + " T ON U.USER_ID = T.TAG_SUBJECT_ID " +
                         "WHERE T.TAG_PHOTO_ID = " + photoId + " " +
                         "ORDER BY U.USER_ID ASC"
-                    );
+                    )) {
 
                 
                     // Iterate through the tagged users and add to the taggedPhotoInfo
@@ -374,6 +375,9 @@ public final class StudentFakebookOracle extends FakebookOracle {
                         UserInfo userInfo = new UserInfo(userId, firstName, lastName);
                         taggedPhotoInfo.addTaggedUser(userInfo);
                     }
+
+                    taggedUsersRs.close();
+                        
                 } catch (SQLException e) {
                     System.err.println("Error executing query for tagged users: " + e.getMessage());
                 }
@@ -387,15 +391,14 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 //     System.out.println("No more photos");
                 //     break;
                 // }
-               
+            
             }
-
 
             topPhotosRs.close();
             stmt.close();
 
         } catch (SQLException e) {
-            System.err.println("Error executing query for photos: " + e.getMessage());
+            System.err.println("Error executing query for tagged users: " + e.getMessage());
         }
 
         return results;
