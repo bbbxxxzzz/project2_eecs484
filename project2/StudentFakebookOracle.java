@@ -371,20 +371,10 @@ public final class StudentFakebookOracle extends FakebookOracle {
     //        (B) For each pair identified in (A), find the IDs, links, and IDs and names of
     //            the containing album of each photo in which they are tagged together
     public FakebookArrayList<MatchPair> matchMaker(int num, int yearDiff) throws SQLException {
-        FakebookArrayList<MatchPair> results = new FakebookArrayList<MatchPair>("\n");
-
+        FakebookArrayList<MatchPair> results = new FakebookArrayList<>("\n");
+    
         try (Statement stmt = oracle.createStatement(FakebookOracleConstants.AllScroll,
                 FakebookOracleConstants.ReadOnly)) {
-            /*
-                EXAMPLE DATA STRUCTURE USAGE
-                ============================================
-                UserInfo u1 = new UserInfo(93103, "Romeo", "Montague");
-                UserInfo u2 = new UserInfo(93113, "Juliet", "Capulet");
-                MatchPair mp = new MatchPair(u1, 1597, u2, 1597);
-                PhotoInfo p = new PhotoInfo(167, 309, "www.photolink.net", "Tragedy");
-                mp.addSharedPhoto(p);
-                results.add(mp);
-            */
             
             // Query to find potential pairs of users who meet the criteria
             String potentialPairsQuery = 
@@ -403,28 +393,28 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "U2.USER_ID, U2.FIRST_NAME, U2.LAST_NAME, U2.YEAR_OF_BIRTH " +
                 "HAVING COUNT(DISTINCT T1.TAG_PHOTO_ID) > 0 " +
                 "ORDER BY COMMON_PHOTOS_COUNT DESC, U1.USER_ID ASC, U2.USER_ID ASC ";
-
-            ResultSet pairsRs = stmt.executeQuery(potentialPairsQuery);
-            
-            try (Statement stmt2 = oracle.createStatement(FakebookOracleConstants.AllScroll,
-                FakebookOracleConstants.ReadOnly)) {
-
-                // Iterate through the pairs of users
-                long user1Id = pairsRs.getLong("USER1_ID");
-                String user1FirstName = pairsRs.getString("USER1_FIRST");
-                String user1LastName = pairsRs.getString("USER1_LAST");
-                int user1BirthYear = pairsRs.getInt("USER1_BIRTH_YEAR");
-                UserInfo user1 = new UserInfo(user1Id, user1FirstName, user1LastName);
-
-                long user2Id = pairsRs.getLong("USER2_ID");
-                String user2FirstName = pairsRs.getString("USER2_FIRST");
-                String user2LastName = pairsRs.getString("USER2_LAST");
-                int user2BirthYear = pairsRs.getInt("USER2_BIRTH_YEAR");
-                UserInfo user2 = new UserInfo(user2Id, user2FirstName, user2LastName);
-
-                MatchPair matchPair = new MatchPair(user1, user1BirthYear, user2, user2BirthYear);
-
-                while (pairsRs.next()) {
+    
+            try (ResultSet pairsRs = stmt.executeQuery(potentialPairsQuery);
+                 Statement stmt2 = oracle.createStatement(FakebookOracleConstants.AllScroll, FakebookOracleConstants.ReadOnly)) {
+    
+                int count = 0;
+                
+                while (pairsRs.next() && count < num) {
+                    // Retrieve user details inside the while loop
+                    long user1Id = pairsRs.getLong("USER1_ID");
+                    String user1FirstName = pairsRs.getString("USER1_FIRST");
+                    String user1LastName = pairsRs.getString("USER1_LAST");
+                    int user1BirthYear = pairsRs.getInt("USER1_BIRTH_YEAR");
+                    UserInfo user1 = new UserInfo(user1Id, user1FirstName, user1LastName);
+    
+                    long user2Id = pairsRs.getLong("USER2_ID");
+                    String user2FirstName = pairsRs.getString("USER2_FIRST");
+                    String user2LastName = pairsRs.getString("USER2_LAST");
+                    int user2BirthYear = pairsRs.getInt("USER2_BIRTH_YEAR");
+                    UserInfo user2 = new UserInfo(user2Id, user2FirstName, user2LastName);
+    
+                    MatchPair matchPair = new MatchPair(user1, user1BirthYear, user2, user2BirthYear);
+    
                     // Query to get the photos in which both users are tagged together
                     String commonPhotosQuery = 
                         "SELECT P.PHOTO_ID, P.PHOTO_LINK, P.ALBUM_ID, A.ALBUM_NAME " +
@@ -434,36 +424,27 @@ public final class StudentFakebookOracle extends FakebookOracle {
                         "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                         "WHERE T1.TAG_SUBJECT_ID = " + user1Id + " AND T2.TAG_SUBJECT_ID = " + user2Id + " " +
                         "ORDER BY P.PHOTO_ID ASC";
-
-                    ResultSet photosRs = stmt2.executeQuery(commonPhotosQuery);
-
-                    // Iterate through the common photos and add to the matchPair
-                    while (photosRs.next()) {
-                        long photoId = photosRs.getLong("PHOTO_ID");
-                        String photoLink = photosRs.getString("PHOTO_LINK");
-                        long albumId = photosRs.getLong("ALBUM_ID");
-                        String albumName = photosRs.getString("ALBUM_NAME");
-                        PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
-                        matchPair.addSharedPhoto(photoInfo);
+    
+                    try (ResultSet photosRs = stmt2.executeQuery(commonPhotosQuery)) {
+                        // Iterate through the common photos and add to the matchPair
+                        while (photosRs.next()) {
+                            long photoId = photosRs.getLong("PHOTO_ID");
+                            String photoLink = photosRs.getString("PHOTO_LINK");
+                            long albumId = photosRs.getLong("ALBUM_ID");
+                            String albumName = photosRs.getString("ALBUM_NAME");
+                            PhotoInfo photoInfo = new PhotoInfo(photoId, albumId, photoLink, albumName);
+                            matchPair.addSharedPhoto(photoInfo);
+                        }
                     }
-
+    
                     results.add(matchPair);
-                
-                    photosRs.close();
-                    stmt2.close();
+                    count++;
                 }
-
-            } catch (SQLException e) {
-                System.err.println(e.getMessage());
             }
-            
-            pairsRs.close();
-            stmt.close();
-
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Error executing query: " + e.getMessage());
         }
-
+    
         return results;
     }
 
