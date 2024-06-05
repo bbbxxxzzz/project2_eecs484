@@ -387,8 +387,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
             }
 
 
-            topPhotosRs.close();
-            stmt.close();
+            // topPhotosRs.close();
+            // stmt.close();
 
         } catch (SQLException e) {
             System.err.println(e.getMessage());
