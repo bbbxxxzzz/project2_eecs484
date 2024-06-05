@@ -328,6 +328,11 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             // Iterate through the top photos
             // System.out.println(num);
+            while (topPhotosRs.next()) {
+                for (int i = 1; i <= topPhotosRs.getMetaData().getColumnCount(); i++) {
+                    System.out.print(topPhotosRs.getString(i) + "\t");
+                }   
+            }
             while(topPhotosRs.next() && num-- > 0){
                 
                 // read the next row of topPhotosRs
