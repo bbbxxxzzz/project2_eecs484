@@ -323,7 +323,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "FROM " + PhotosTable + " P " +
                 "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                 "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
-                "GROUP BY T.TAG_SUBJECT_ID " +
+                "GROUP BY P.PHOTO_ID " +
                 "ORDER BY count DESC, P.PHOTO_ID ASC ");
 
             // Iterate through the top photos
@@ -331,7 +331,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 
                 // read the next row of topPhotosRs
                 topPhotosRs.next();
-                // System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
+                System.out.println("Photo ID: " + topPhotosRs.getLong("PHOTO_ID"));
 
                 Long photoId = topPhotosRs.getLong("PHOTO_ID");
                 Long albumId = topPhotosRs.getLong("ALBUM_ID");
