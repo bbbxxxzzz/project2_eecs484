@@ -319,15 +319,15 @@ public final class StudentFakebookOracle extends FakebookOracle {
             */
 
             ResultSet topPhotosRs = stmt.executeQuery(
-                "SELECT P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME, COUNT(T.TAG_SUBJECT_ID) AS TAG_COUNT " +
+                "SELECT P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME, COUNT(T.TAG_SUBJECT_ID) AS count " +
                 "FROM " + PhotosTable + " P " +
                 "JOIN " + AlbumsTable + " A ON P.ALBUM_ID = A.ALBUM_ID " +
                 "JOIN " + TagsTable + " T ON P.PHOTO_ID = T.TAG_PHOTO_ID " +
-                "GROUP BY P.PHOTO_ID, P.ALBUM_ID, P.PHOTO_LINK, A.ALBUM_NAME " +
-                "ORDER BY TAG_COUNT DESC, P.PHOTO_ID ASC ");
+                "GROUP BY P.PHOTO_ID " +
+                "ORDER BY count DESC, P.PHOTO_ID ASC ");
 
             // Iterate through the top photos
-            while(num!=0){
+            for (int i = 0; i < num; i++) {
                 while (topPhotosRs.next()) {
                     Long photoId = topPhotosRs.getLong("PHOTO_ID");
                     Long albumId = topPhotosRs.getLong("ALBUM_ID");
@@ -359,7 +359,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     taggedUsersRs.close();
                     stmt.close();
                 }
-                num--;
             }
 
                 topPhotosRs.close();
