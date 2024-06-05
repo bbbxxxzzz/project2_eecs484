@@ -327,6 +327,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "ORDER BY count DESC, P.PHOTO_ID ASC ");
 
             // Iterate through the top photos
+            System.out.println(num);
             for (int i = 0; i < num; i++) {
                 
                 // read the next row of topPhotosRs
