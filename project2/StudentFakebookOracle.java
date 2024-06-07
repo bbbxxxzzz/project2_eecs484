@@ -534,8 +534,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 
                 System.out.println("Query2 executed");
                 rst.next();
-                UserInfo user1 = new UserInfo(user1Id, rst.getString("U1.FIRST_NAME"), rst.getString("U1.LAST_NAME"));
-                UserInfo user2 = new UserInfo(user2Id, rst.getString("U2.FIRST_NAME"), rst.getString("U2.LAST_NAME"));
+                UserInfo user1 = new UserInfo(user1Id, rst.getString(1), rst.getString(2));
+                UserInfo user2 = new UserInfo(user2Id, rst.getString(3), rst.getString(4));
                 UsersPair pair = new UsersPair(user1, user2);
 
                 rst = stmt.executeQuery(
