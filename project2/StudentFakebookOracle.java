@@ -504,7 +504,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
-            ArrayList<ArrayList<Long>> mutualFriendList = new ArrayList<>();
 
             while (rst.next()) {
                 user1List.add(rst.getLong("USER1_ID"));
@@ -528,8 +527,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 );
                 
                 rst.next();
-                UserInfo user1 = new UserInfo(user1Id, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
-                UserInfo user2 = new UserInfo(user2Id, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
+                UserInfo user1 = new UserInfo(user1Id, rst.getString("U1.FIRST_NAME"), rst.getString("U1.LAST_NAME"));
+                UserInfo user2 = new UserInfo(user2Id, rst.getString("U2.FIRST_NAME"), rst.getString("U2.LAST_NAME"));
                 UsersPair pair = new UsersPair(user1, user2);
                 rst.close();
 
