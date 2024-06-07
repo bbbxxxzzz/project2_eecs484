@@ -498,10 +498,12 @@ public final class StudentFakebookOracle extends FakebookOracle {
             
             
             ResultSet rst = stmt.executeQuery(
-                "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
-                "FROM mutualFriends " +
-                "GROUP BY USER1_ID, USER2_ID " +
-                "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC" +
+                "SELECT DISTINCT USER1_ID, USER2_ID " +
+                "FROM (" +
+                    "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
+                    "FROM mutualFriends " +
+                    "GROUP BY USER1_ID, USER2_ID " +
+                    "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " +
                 "WHERE ROWNUM <= " + num
             );
 
