@@ -515,7 +515,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 Long cur1 = rst.getLong("USER1_ID");
                 Long cur2 = rst.getLong("USER2_ID");
 
-                if (cur1 != prev1 && cur2 != prev2) {
+                if (!cur1.equals(prev1) && !cur2.equals(prev2)) {
                     user1List.add(cur1);
                     user2List.add(cur2);
                     mutualFriendList.add(curMutualFriends);
@@ -527,6 +527,9 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 prev1 = cur1;
                 prev2 = cur2;
             }
+
+            rst.close();
+
 
             // Fetch mutual friends for each pair
             for (int i = 0; i < num; i++) {
@@ -557,10 +560,9 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 }
 
                 results.add(pair);
-
+                rst.close();
             }
 
-            rst.close();
             stmt.executeUpdate("DROP VIEW BidirectionalFriends");
             stmt.executeUpdate("DROP VIEW mutualFriends");
             stmt.close();
