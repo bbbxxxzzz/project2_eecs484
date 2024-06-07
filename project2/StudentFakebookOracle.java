@@ -496,7 +496,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                                 "OR (F.USER1_ID = BF2.USER_ID1 AND F.USER2_ID = BF1.USER_ID1)) " 
             );
             
-
+            System.out.println("Created mutualFriends view");
             ResultSet rst = stmt.executeQuery(
                 "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
                 "FROM mutualFriends " +
