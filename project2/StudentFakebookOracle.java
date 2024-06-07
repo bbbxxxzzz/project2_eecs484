@@ -542,7 +542,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID " +
                     "FROM " + UsersTable + " U " +
                     "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
-                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id
+                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id +
+                    "ORDER BY MF_ID ASC"
                 );
                 System.out.println("Query3 executed");
                 while (rst.next()) {
