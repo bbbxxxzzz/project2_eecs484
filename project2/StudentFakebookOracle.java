@@ -490,7 +490,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, BF1.USER_ID2 AS MF_ID " +
                 "FROM BidirectionalFriends BF1, BidirectionalFriends BF2, " + FriendsTable + " F " + 
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
-                "AND ((BF1.USER_ID1 != F.USER1_ID AND BF2.USER_ID1 != F.USER2_ID) OR (BF1.USER_ID1 != F.USER2_ID AND BF2.USER_ID1 != F.USER1_ID)) " + 
+                "AND (BF1.USERID1, BF2.USERID2) NOT IN BF1 " + 
                 "AND BF1.USER_ID1 < BF2.USER_ID1 "
             );
             
