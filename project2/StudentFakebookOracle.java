@@ -504,7 +504,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "FROM mutualFriends " +
                     "GROUP BY USER1_ID, USER2_ID " +
                     "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " +
-                "WHERE ROWNUM <= " + num
+                "WHERE ROWNUM <= " + num + " " +
+                "ORDER BY USER1_ID ASC, USER2_ID ASC"
             );
 
             System.out.println("Query executed");
