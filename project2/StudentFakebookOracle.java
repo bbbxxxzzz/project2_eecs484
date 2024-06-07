@@ -491,41 +491,24 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "FROM BidirectionalFriends BF1, BidirectionalFriends BF2, " + FriendsTable + " F " + 
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
                 "AND ((BF1.USER_ID1 != F.USER1_ID AND BF2.USER_ID1 != F.USER2_ID) OR (BF1.USER_ID1 != F.USER2_ID AND BF2.USER_ID1 != F.USER1_ID)) " + 
-                "AND BF1.USER_ID1 < BF2.USER_ID1 " +
-                "ORDER BY COUNT(*) DESC, BF1.USER_ID1 ASC, BF2.USER_ID1 ASC "
+                "AND BF1.USER_ID1 < BF2.USER_ID1 "
             );
             
 
             ResultSet rst = stmt.executeQuery(
-                "SELECT USER1_ID, USER2_ID, MF_ID, MUTUAL_FRIENDS_COUNT " +
-                "FROM mutualFriends "
+                "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
+                "FROM mutualFriends " +
+                "GROUP BY USER1_ID, USER2_ID " +
+                "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC"
             );
 
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
             ArrayList<ArrayList<Long>> mutualFriendList = new ArrayList<>();
 
-            rst.next();
-            Long prev1 = rst.getLong("USER1_ID");
-            Long prev2 = rst.getLong("USER2_ID");
-            ArrayList<Long> curMutualFriends = new ArrayList<>();
-            curMutualFriends.add(rst.getLong("MF_ID"));
             while (rst.next()) {
-
-                Long cur1 = rst.getLong("USER1_ID");
-                Long cur2 = rst.getLong("USER2_ID");
-
-                if (!cur1.equals(prev1) && !cur2.equals(prev2)) {
-                    user1List.add(cur1);
-                    user2List.add(cur2);
-                    mutualFriendList.add(curMutualFriends);
-                } else {
-                    curMutualFriends.add(rst.getLong("MF_ID"));
-
-                }
-                
-                prev1 = cur1;
-                prev2 = cur2;
+                user1List.add(rst.getLong("USER1_ID"));
+                user2List.add(rst.getLong("USER2_ID"));
             }
 
             rst.close();
@@ -533,6 +516,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             // Fetch mutual friends for each pair
             for (int i = 0; i < num; i++) {
+
+                // create a new pair 
                 Long user1Id = user1List.get(i);
                 Long user2Id = user2List.get(i);
 
@@ -546,17 +531,20 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 UserInfo user1 = new UserInfo(user1Id, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
                 UserInfo user2 = new UserInfo(user2Id, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
                 UsersPair pair = new UsersPair(user1, user2);
+                rst.close();
 
-                while (mutualFriendList.get(i).size() > 0) {
-                    Long mutualFriendId = mutualFriendList.get(i).remove(0);
-                    rst = stmt.executeQuery(
-                        "SELECT FIRST_NAME, LAST_NAME " +
-                        "FROM " + UsersTable + " " +
-                        "WHERE USER_ID = " + mutualFriendId + " "
-                    );
-                    rst.next();
+                rst = stmt.executeQuery(
+                    "SELECT U.FIRST_NAME, U.LAST_NAME, MF.MF_ID " +
+                    "FROM " + UsersTable + " U " +
+                    "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
+                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id + " "
+                );
+                
+                while (rst.next()) {
+                    Long mutualFriendId = rst.getLong("USER_ID");
                     UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
                     pair.addSharedFriend(mutualFriend);
+                    
                 }
 
                 results.add(pair);
