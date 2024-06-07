@@ -492,7 +492,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
                 "AND ((BF1.USER_ID1 != F.USER1_ID AND BF2.USER_ID1 != F.USER2_ID) OR (BF1.USER_ID1 != F.USER2_ID AND BF2.USER_ID1 != F.USER1_ID)) " + 
                 "AND BF1.USER_ID1 < BF2.USER_ID1 " +
-                "GROUP BY BF1.USER_ID1, BF2.USER_ID1 " +
                 "ORDER BY COUNT(*) DESC, BF1.USER_ID1 ASC, BF2.USER_ID1 ASC "
             );
             
