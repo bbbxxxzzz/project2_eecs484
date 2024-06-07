@@ -508,7 +508,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "ORDER BY USER1_ID ASC, USER2_ID ASC"
             );
 
-            System.out.println("Query executed");
+            System.out.println("Query1 executed");
 
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
@@ -517,7 +517,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 user1List.add(rst.getLong("USER1_ID"));
                 user2List.add(rst.getLong("USER2_ID"));
             }
-
 
 
             // Fetch mutual friends for each pair
@@ -533,6 +532,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id
                 );
                 
+                System.out.println("Query2 executed");
                 rst.next();
                 UserInfo user1 = new UserInfo(user1Id, rst.getString("U1.FIRST_NAME"), rst.getString("U1.LAST_NAME"));
                 UserInfo user2 = new UserInfo(user2Id, rst.getString("U2.FIRST_NAME"), rst.getString("U2.LAST_NAME"));
