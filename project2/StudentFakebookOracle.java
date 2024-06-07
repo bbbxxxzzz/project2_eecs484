@@ -525,7 +525,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 // create a new pair 
                 Long user1Id = user1List.get(i);
                 Long user2Id = user2List.get(i);
-
+                System.out.println("user1Id: " + user1Id + " user2Id: " + user2Id);
                 rst = stmt.executeQuery(
                     "SELECT U1.FIRST_NAME, U1.LAST_NAME, U2.FIRST_NAME, U2.LAST_NAME " +
                     "FROM " + UsersTable + " U1 " + UsersTable + " U2 " +
@@ -542,7 +542,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID" +
                     "FROM " + UsersTable + " U " +
                     "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
-                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id + " "
+                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id
                 );
                 
                 while (rst.next()) {
