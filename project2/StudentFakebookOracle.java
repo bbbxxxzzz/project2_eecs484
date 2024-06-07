@@ -8,7 +8,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -498,54 +497,65 @@ public final class StudentFakebookOracle extends FakebookOracle {
             );
             
             
-            // Query to fetch user pairs along with their mutual friends
             ResultSet rst = stmt.executeQuery(
-                "SELECT mf.USER1_ID, mf.USER2_ID, mf.MF_ID, u1.FIRST_NAME AS USER1_FIRST_NAME, u1.LAST_NAME AS USER1_LAST_NAME, " +
-                "u2.FIRST_NAME AS USER2_FIRST_NAME, u2.LAST_NAME AS USER2_LAST_NAME, " +
-                "u3.FIRST_NAME AS MF_FIRST_NAME, u3.LAST_NAME AS MF_LAST_NAME " +
-                "FROM mutualFriends mf " +
-                "JOIN " + UsersTable + " u1 ON mf.USER1_ID = u1.USER_ID " +
-                "JOIN " + UsersTable + " u2 ON mf.USER2_ID = u2.USER_ID " +
-                "JOIN " + UsersTable + " u3 ON mf.MF_ID = u3.USER_ID " +
-                "ORDER BY mf.USER1_ID, mf.USER2_ID " +
-                "FETCH FIRST " + num + " ROWS ONLY"
+                "SELECT DISTINCT USER1_ID, USER2_ID " +
+                "FROM (" +
+                    "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
+                    "FROM mutualFriends " +
+                    "GROUP BY USER1_ID, USER2_ID " +
+                    "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " +
+                "WHERE ROWNUM <= " + num + " " +
+                "ORDER BY USER1_ID ASC, USER2_ID ASC"
             );
 
-            // Process the result set
-            Map<String, UsersPair> userPairsMap = new HashMap<>();
+
+            ArrayList<Long> user1List = new ArrayList<>();
+            ArrayList<Long> user2List = new ArrayList<>();
+
             while (rst.next()) {
-                Long user1Id = rst.getLong("USER1_ID");
-                Long user2Id = rst.getLong("USER2_ID");
-                Long mutualFriendId = rst.getLong("MF_ID");
+                user1List.add(rst.getLong("USER1_ID"));
+                user2List.add(rst.getLong("USER2_ID"));
+            }
 
-                String user1FirstName = rst.getString("USER1_FIRST_NAME");
-                String user1LastName = rst.getString("USER1_LAST_NAME");
-                String user2FirstName = rst.getString("USER2_FIRST_NAME");
-                String user2LastName = rst.getString("USER2_LAST_NAME");
-                String mutualFirstName = rst.getString("MF_FIRST_NAME");
-                String mutualLastName = rst.getString("MF_LAST_NAME");
 
-                String key = user1Id + "-" + user2Id;
-                UsersPair pair = userPairsMap.get(key);
+            // Fetch mutual friends for each pair
+            for (int i = 0; i < num; i++) {
 
-                if (pair == null) {
-                    UserInfo user1 = new UserInfo(user1Id, user1FirstName, user1LastName);
-                    UserInfo user2 = new UserInfo(user2Id, user2FirstName, user2LastName);
-                    pair = new UsersPair(user1, user2);
-                    userPairsMap.put(key, pair);
+                // create a new pair 
+                Long user1Id = user1List.get(i);
+                Long user2Id = user2List.get(i);
+                rst = stmt.executeQuery(
+                    "SELECT U1.FIRST_NAME, U1.LAST_NAME, U2.FIRST_NAME, U2.LAST_NAME " +
+                    "FROM " + UsersTable + " U1, " + UsersTable + " U2 " +
+                    "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id
+                );
+                
+                rst.next();
+                UserInfo user1 = new UserInfo(user1Id, rst.getString(1), rst.getString(2));
+                UserInfo user2 = new UserInfo(user2Id, rst.getString(3), rst.getString(4));
+                UsersPair pair = new UsersPair(user1, user2);
+
+                rst = stmt.executeQuery(
+                    "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID " +
+                    "FROM " + UsersTable + " U " +
+                    "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
+                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id +
+                    "ORDER BY MF_ID ASC"
+                );
+                while (rst.next()) {
+                    Long mutualFriendId = rst.getLong("MF_ID");
+                    UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
+                    pair.addSharedFriend(mutualFriend);
+                    
                 }
 
-                UserInfo mutualFriend = new UserInfo(mutualFriendId, mutualFirstName, mutualLastName);
-                pair.addSharedFriend(mutualFriend);
+                results.add(pair);
+                rst.close();
             }
-            rst.close();
 
-            // Add pairs to results
-            results.addAll(userPairsMap.values());
-
-            // Clean up views
             stmt.executeUpdate("DROP VIEW BidirectionalFriends");
             stmt.executeUpdate("DROP VIEW mutualFriends");
+            stmt.close();
 
         } catch (SQLException e) {
             System.err.println("Error executing query: " + e.getMessage());
@@ -571,42 +581,25 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 info.addState("New Hampshire");
                 return info;
             */
-            stmt.executeUpdate(
-            "CREATE VIEW EventCounts AS " +
-            "SELECT C.STATE_NAME, COUNT(*) AS EVENT_COUNT " +
-            "FROM" + EventsTable + " E " +
-            "JOIN" + CitiesTable + " C ON E.EVENT_CITY_ID = C.CITY_ID " +
-            "GROUP BY C.STATE_NAME"
-            );
-
-            // Find the maximum event count
+            
             ResultSet rst = stmt.executeQuery(
-                "SELECT MAX(EVENT_COUNT) AS MAX_COUNT FROM EventCounts"
+                "SELECT C.STATE_NAME AS STATE_NAME, COUNT(*) AS count " +
+                "FROM " + EventsTable + " E " +
+                "JOIN " + CitiesTable + " C ON E.EVENT_CITY_ID = C.CITY_ID " +
+                "GROUP BY C.STATE_NAME " +
+                "ORDER BY count DESC, S.STATE_NAME ASC"
             );
 
-            int maxEventCount = 0;
-            if (rst.next()) {
-                maxEventCount = rst.getInt(1);
+            while (rst.next()) {
+                EventStateInfo info = new EventStateInfo(rst.getLong("count"));
+                info.addState(rst.getString("STATE_NAME"));    
             }
+
             rst.close();
+            stmt.close();
+            
 
-            // Retrieve states with the maximum event count
-            ResultSet rs = stmt.executeQuery(
-                "SELECT STATE_NAME, EVENT_COUNT FROM EventCounts " +
-                "WHERE EVENT_COUNT = " + maxEventCount + " " +
-                "ORDER BY STATE_NAME ASC"
-            );
 
-            EventStateInfo eventStateInfo = new EventStateInfo(maxEventCount);
-
-            while (rs.next()) {
-                eventStateInfo.addState(rs.getString(1));
-            }
-            rs.close();
-
-            stmt.executeUpdate("DROP VIEW EventCounts");
-
-            return eventStateInfo;
         } catch (SQLException e) {
             System.err.println(e.getMessage());
             return new EventStateInfo(-1);
