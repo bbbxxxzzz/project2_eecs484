@@ -501,7 +501,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
-            HashMap<String, Integer> mutualFriendsCount = new HashMap<>();
 
             while (pairsRs.next()) {
                 long user1Id = pairsRs.getLong("USER1_ID");
@@ -509,7 +508,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 int count = pairsRs.getInt("MUTUAL_FRIENDS_COUNT");
                 user1List.add(user1Id);
                 user2List.add(user2Id);
-                mutualFriendsCount.put(user1Id + "_" + user2Id, count);
             }
 
             pairsRs.close();
