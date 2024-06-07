@@ -488,7 +488,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
             stmt.executeUpdate( 
                 "CREATE OR REPLACE VIEW mutualFriends AS " + 
                 "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, BF1.USER_ID2 AS MF_ID " +
-                "FROM BidirectionalFriends BF1, BidirectionalFriends BF2, " +
+                "FROM BidirectionalFriends BF1, BidirectionalFriends BF2 " +
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
                 "AND BF1.USER_ID1 < BF2.USER_ID1 " +
                 "AND NOT EXISTS (SELECT 1 FROM " + FriendsTable + " F " +
