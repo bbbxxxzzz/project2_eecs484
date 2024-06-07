@@ -544,7 +544,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
                     "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id
                 );
-                
+                System.out.println("Query3 executed");
                 while (rst.next()) {
                     Long mutualFriendId = rst.getLong("MF_ID");
                     UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
