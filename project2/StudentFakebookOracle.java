@@ -539,7 +539,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 UsersPair pair = new UsersPair(user1, user2);
 
                 rst = stmt.executeQuery(
-                    "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID" +
+                    "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID " +
                     "FROM " + UsersTable + " U " +
                     "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
                     "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id
