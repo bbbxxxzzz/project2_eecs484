@@ -521,7 +521,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 Long user2Id = user2List.get(i);
 
                 rst = stmt.executeQuery(
-                    "SELECT FIRST_NAME, LAST_NAME " +
+                    "SELECT U1.FIRST_NAME, U1.LAST_NAME, U2.FIRST_NAME, U2.LAST_NAME " +
                     "FROM " + UsersTable + " U1 " + UsersTable + " U2 " +
                     "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id + " "
                 );
