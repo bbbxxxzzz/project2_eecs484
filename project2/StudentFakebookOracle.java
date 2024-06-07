@@ -6,6 +6,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
     The StudentFakebookOracle class is derived from the FakebookOracle class and implements
@@ -461,6 +465,17 @@ public final class StudentFakebookOracle extends FakebookOracle {
         FakebookArrayList<UsersPair> results = new FakebookArrayList<UsersPair>("\n");
 
         try (Statement stmt = oracle.createStatement(FakebookOracleConstants.AllScroll, FakebookOracleConstants.ReadOnly)) {
+            /*
+                EXAMPLE DATA STRUCTURE USAGE
+                ============================================
+                UserInfo u1 = new UserInfo(16, "The", "Hacker");
+                UserInfo u2 = new UserInfo(80, "Dr.", "Marbles");
+                UserInfo u3 = new UserInfo(192, "Digit", "Le Boid");
+                UsersPair up = new UsersPair(u1, u2);
+                up.addSharedFriend(u3);
+                results.add(up);
+            */
+            
             // Create or replace a bidirectional friendship view to simplify querying mutual friends
             stmt.executeUpdate(
                 "CREATE OR REPLACE VIEW BidirectionalFriends AS " +
@@ -468,7 +483,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "UNION " +
                 "SELECT USER2_ID AS USER_ID1, USER1_ID AS USER_ID2 FROM " + FriendsTable
             );
-    
+
             // Find pairs of users who have mutual friends but are not friends themselves
             String mutualFriendsQuery = 
                 "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, COUNT(*) AS MUTUAL_FRIENDS_COUNT " +
@@ -481,79 +496,83 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "GROUP BY BF1.USER_ID1, BF2.USER_ID1 " +
                 "ORDER BY MUTUAL_FRIENDS_COUNT DESC, BF1.USER_ID1 ASC, BF2.USER_ID1 ASC " +
                 "FETCH FIRST " + num + " ROWS ONLY";
-    
+
             ResultSet pairsRs = stmt.executeQuery(mutualFriendsQuery);
-    
+
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
-    
+            HashMap<String, Integer> mutualFriendsCount = new HashMap<>();
+
             while (pairsRs.next()) {
-                user1List.add(pairsRs.getLong("USER1_ID"));
-                user2List.add(pairsRs.getLong("USER2_ID"));
+                long user1Id = pairsRs.getLong("USER1_ID");
+                long user2Id = pairsRs.getLong("USER2_ID");
+                int count = pairsRs.getInt("MUTUAL_FRIENDS_COUNT");
+                user1List.add(user1Id);
+                user2List.add(user2Id);
+                mutualFriendsCount.put(user1Id + "_" + user2Id, count);
             }
-    
+
             pairsRs.close();
-    
+
+            // Fetch all user information
+            Set<Long> userIds = new HashSet<>(user1List);
+            userIds.addAll(user2List);
+
+            String userInfoQuery = 
+                "SELECT USER_ID, FIRST_NAME, LAST_NAME FROM " + UsersTable + " WHERE USER_ID IN (" +
+                userIds.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
+            
+            ResultSet userInfoRs = stmt.executeQuery(userInfoQuery);
+            HashMap<Long, UserInfo> usersMap = new HashMap<>();
+
+            while (userInfoRs.next()) {
+                long userId = userInfoRs.getLong("USER_ID");
+                String firstName = userInfoRs.getString("FIRST_NAME");
+                String lastName = userInfoRs.getString("LAST_NAME");
+                usersMap.put(userId, new UserInfo(userId, firstName, lastName));
+            }
+
+            userInfoRs.close();
+
+            // Fetch mutual friends for each pair
             for (int i = 0; i < user1List.size(); i++) {
                 long user1Id = user1List.get(i);
                 long user2Id = user2List.get(i);
-    
-                String userInfoQuery = 
-                    "SELECT USER_ID, FIRST_NAME, LAST_NAME FROM " + UsersTable + " WHERE USER_ID IN (?, ?)";
-    
-                try (PreparedStatement userInfoStmt = oracle.prepareStatement(userInfoQuery)) {
-                    userInfoStmt.setLong(1, user1Id);
-                    userInfoStmt.setLong(2, user2Id);
-                    ResultSet userInfoRs = userInfoStmt.executeQuery();
-                    UserInfo user1 = null, user2 = null;
-    
-                    while (userInfoRs.next()) {
-                        long userId = userInfoRs.getLong("USER_ID");
-                        String firstName = userInfoRs.getString("FIRST_NAME");
-                        String lastName = userInfoRs.getString("LAST_NAME");
-                        if (userId == user1Id) {
-                            user1 = new UserInfo(userId, firstName, lastName);
-                        } else if (userId == user2Id) {
-                            user2 = new UserInfo(userId, firstName, lastName);
-                        }
+
+                UsersPair pair = new UsersPair(usersMap.get(user1Id), usersMap.get(user2Id));
+
+                String mutualsQuery = 
+                    "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                    "FROM " + UsersTable + " U, " + FriendsTable + " F1, " + FriendsTable + " F2 " +
+                    "WHERE F1.USER1_ID = ? AND F2.USER1_ID = ? AND F1.USER2_ID = F2.USER2_ID " +
+                    "AND U.USER_ID = F1.USER2_ID " +
+                    "ORDER BY U.USER_ID ASC";
+
+                try (PreparedStatement mutualsStmt = oracle.prepareStatement(mutualsQuery)) {
+                    mutualsStmt.setLong(1, user1Id);
+                    mutualsStmt.setLong(2, user2Id);
+                    ResultSet mutualsRs = mutualsStmt.executeQuery();
+
+                    while (mutualsRs.next()) {
+                        long mutualId = mutualsRs.getLong("USER_ID");
+                        String mutualFirstName = mutualsRs.getString("FIRST_NAME");
+                        String mutualLastName = mutualsRs.getString("LAST_NAME");
+                        UserInfo mutualFriend = new UserInfo(mutualId, mutualFirstName, mutualLastName);
+                        pair.addSharedFriend(mutualFriend);
                     }
-                    userInfoRs.close();
-    
-                    UsersPair pair = new UsersPair(user1, user2);
-    
-                    String mutualsQuery = 
-                        "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
-                        "FROM " + UsersTable + " U, " + FriendsTable + " F1, " + FriendsTable + " F2 " +
-                        "WHERE F1.USER1_ID = ? AND F2.USER1_ID = ? AND F1.USER2_ID = F2.USER2_ID " +
-                        "AND U.USER_ID = F1.USER2_ID " +
-                        "ORDER BY U.USER_ID ASC";
-    
-                    try (PreparedStatement mutualsStmt = oracle.prepareStatement(mutualsQuery)) {
-                        mutualsStmt.setLong(1, user1Id);
-                        mutualsStmt.setLong(2, user2Id);
-                        ResultSet mutualsRs = mutualsStmt.executeQuery();
-    
-                        while (mutualsRs.next()) {
-                            long mutualId = mutualsRs.getLong("USER_ID");
-                            String mutualFirstName = mutualsRs.getString("FIRST_NAME");
-                            String mutualLastName = mutualsRs.getString("LAST_NAME");
-                            UserInfo mutualFriend = new UserInfo(mutualId, mutualFirstName, mutualLastName);
-                            pair.addSharedFriend(mutualFriend);
-                        }
-    
-                        mutualsRs.close();
-                    }
-    
-                    results.add(pair);
+
+                    mutualsRs.close();
                 }
+
+                results.add(pair);
             }
-    
+
             stmt.executeUpdate("DROP VIEW BidirectionalFriends");
-    
+
         } catch (SQLException e) {
             System.err.println("Error executing query: " + e.getMessage());
         }
-    
+
         return results;
     }
 
