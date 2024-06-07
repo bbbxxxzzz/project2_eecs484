@@ -509,6 +509,10 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
             System.out.println("Query executed");
 
+            while (rst.next()) {
+                System.out.println("User1: " + rst.getLong("USER1_ID") + " User2: " + rst.getLong("USER2_ID"));
+            }
+
             ArrayList<Long> user1List = new ArrayList<>();
             ArrayList<Long> user2List = new ArrayList<>();
 
