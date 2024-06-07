@@ -516,47 +516,58 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 user1List.add(rst.getLong("USER1_ID"));
                 user2List.add(rst.getLong("USER2_ID"));
             }
+            rst.close();
 
-
-            // Fetch mutual friends for each pair
-            for (int i = 0; i < num; i++) {
-
-                // create a new pair 
+            // Fetch user information and mutual friends for each pair
+            for (int i = 0; i < user1List.size(); i++) {
                 Long user1Id = user1List.get(i);
                 Long user2Id = user2List.get(i);
-                System.out.println("user1Id: " + user1Id + " user2Id: " + user2Id);
-                rst = stmt.executeQuery(
-                    "SELECT U1.FIRST_NAME, U1.LAST_NAME, U2.FIRST_NAME, U2.LAST_NAME " +
-                    "FROM " + UsersTable + " U1, " + UsersTable + " U2 " +
-                    "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id
-                );
-                
-                rst.next();
-                UserInfo user1 = new UserInfo(user1Id, rst.getString(1), rst.getString(2));
-                UserInfo user2 = new UserInfo(user2Id, rst.getString(3), rst.getString(4));
-                UsersPair pair = new UsersPair(user1, user2);
 
-                rst = stmt.executeQuery(
-                    "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID " +
-                    "FROM " + UsersTable + " U " +
-                    "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
-                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id +
-                    "ORDER BY MF_ID ASC"
-                );
-                while (rst.next()) {
-                    Long mutualFriendId = rst.getLong("MF_ID");
-                    UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
-                    pair.addSharedFriend(mutualFriend);
-                    
+                try (PreparedStatement userInfoStmt = oracle.prepareStatement(
+                        "SELECT U1.USER_ID AS USER1_ID, U1.FIRST_NAME AS USER1_FIRST_NAME, U1.LAST_NAME AS USER1_LAST_NAME, " +
+                        "U2.USER_ID AS USER2_ID, U2.FIRST_NAME AS USER2_FIRST_NAME, U2.LAST_NAME AS USER2_LAST_NAME " +
+                        "FROM " + UsersTable + " U1, " + UsersTable + " U2 " +
+                        "WHERE U1.USER_ID = ? AND U2.USER_ID = ?"
+                )) {
+                    userInfoStmt.setLong(1, user1Id);
+                    userInfoStmt.setLong(2, user2Id);
+
+                    ResultSet userInfoRs = userInfoStmt.executeQuery();
+
+                    if (userInfoRs.next()) {
+                        UserInfo user1 = new UserInfo(user1Id, userInfoRs.getString("USER1_FIRST_NAME"), userInfoRs.getString("USER1_LAST_NAME"));
+                        UserInfo user2 = new UserInfo(user2Id, userInfoRs.getString("USER2_FIRST_NAME"), userInfoRs.getString("USER2_LAST_NAME"));
+                        UsersPair pair = new UsersPair(user1, user2);
+
+                        try (PreparedStatement mutualFriendStmt = oracle.prepareStatement(
+                                "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                                "FROM " + UsersTable + " U, mutualFriends MF " +
+                                "WHERE U.USER_ID = MF.MF_ID AND MF.USER1_ID = ? AND MF.USER2_ID = ? " +
+                                "ORDER BY U.USER_ID ASC"
+                        )) {
+                            mutualFriendStmt.setLong(1, user1Id);
+                            mutualFriendStmt.setLong(2, user2Id);
+
+                            ResultSet mutualFriendRs = mutualFriendStmt.executeQuery();
+
+                            while (mutualFriendRs.next()) {
+                                Long mutualFriendId = mutualFriendRs.getLong("USER_ID");
+                                UserInfo mutualFriend = new UserInfo(mutualFriendId, mutualFriendRs.getString("FIRST_NAME"), mutualFriendRs.getString("LAST_NAME"));
+                                pair.addSharedFriend(mutualFriend);
+                            }
+
+                            mutualFriendRs.close();
+                        }
+
+                        results.add(pair);
+                    }
+
+                    userInfoRs.close();
                 }
-
-                results.add(pair);
-                rst.close();
             }
 
             stmt.executeUpdate("DROP VIEW BidirectionalFriends");
             stmt.executeUpdate("DROP VIEW mutualFriends");
-            stmt.close();
 
         } catch (SQLException e) {
             System.err.println("Error executing query: " + e.getMessage());
