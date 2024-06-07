@@ -485,16 +485,30 @@ public final class StudentFakebookOracle extends FakebookOracle {
             );
 
             // Find pairs of users who have mutual friends but are not friends themselves
-            stmt.executeUpdate( 
-                "CREATE OR REPLACE VIEW mutualFriends AS " + 
+            // stmt.executeUpdate( 
+            //     "CREATE OR REPLACE VIEW mutualFriends AS " + 
+            //     "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, BF1.USER_ID2 AS MF_ID, COUNT(*) AS MUTUAL_FRIENDS_COUNT " +
+            //     "FROM BidirectionalFriends BF1, BidirectionalFriends BF2, " + FriendsTable + " F " + 
+            //     "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
+            //     "AND ((BF1.USER_ID1 != F.USER1_ID AND BF2.USER_ID1 != F.USER2_ID) OR (BF1.USER_ID1 != F.USER2_ID AND BF2.USER_ID1 != F.USER1_ID)) " + 
+            //     "AND BF1.USER_ID1 < BF2.USER_ID1 " +
+            //     "GROUP BY BF1.USER_ID1, BF2.USER_ID1 " +
+            //     "ORDER BY MUTUAL_FRIENDS_COUNT DESC, BF1.USER_ID1 ASC, BF2.USER_ID1 ASC "
+            // );
+
+            stmt.executeUpdate(
+                "CREATE OR REPLACE VIEW mutualFriends AS " +
                 "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, BF1.USER_ID2 AS MF_ID, COUNT(*) AS MUTUAL_FRIENDS_COUNT " +
-                "FROM BidirectionalFriends BF1, BidirectionalFriends BF2, " + FriendsTable + " F " + 
+                "FROM BidirectionalFriends BF1, BidirectionalFriends BF2 " +
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
-                "AND ((BF1.USER_ID1 != F.USER1_ID AND BF2.USER_ID1 != F.USER2_ID) OR (BF1.USER_ID1 != F.USER2_ID AND BF2.USER_ID1 != F.USER1_ID)) " + 
+                "AND NOT EXISTS (SELECT 1 FROM " + FriendsTable + " F " +
+                               "WHERE (F.USER1_ID = BF1.USER_ID1 AND F.USER2_ID = BF2.USER_ID1) " +
+                               "OR (F.USER1_ID = BF2.USER_ID1 AND F.USER2_ID = BF1.USER_ID1)) " +
                 "AND BF1.USER_ID1 < BF2.USER_ID1 " +
-                "GROUP BY BF1.USER_ID1, BF2.USER_ID1 " +
+                "GROUP BY BF1.USER_ID1, BF2.USER_ID1, BF1.USER_ID2 " +
                 "ORDER BY MUTUAL_FRIENDS_COUNT DESC, BF1.USER_ID1 ASC, BF2.USER_ID1 ASC "
             );
+
 
             ResultSet rst = stmt.executeQuery(
                 "SELECT USER1_ID, USER2_ID, MF_ID, MUTUAL_FRIENDS_COUNT " +
