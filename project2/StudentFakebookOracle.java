@@ -510,7 +510,6 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 user2List.add(rst.getLong("USER2_ID"));
             }
 
-            rst.close();
 
 
             // Fetch mutual friends for each pair
@@ -523,24 +522,23 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 rst = stmt.executeQuery(
                     "SELECT U1.FIRST_NAME, U1.LAST_NAME, U2.FIRST_NAME, U2.LAST_NAME " +
                     "FROM " + UsersTable + " U1 " + UsersTable + " U2 " +
-                    "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id + " "
+                    "WHERE U1.USER_ID = " + user1Id + " AND U2.USER_ID = " + user2Id
                 );
                 
                 rst.next();
                 UserInfo user1 = new UserInfo(user1Id, rst.getString("U1.FIRST_NAME"), rst.getString("U1.LAST_NAME"));
                 UserInfo user2 = new UserInfo(user2Id, rst.getString("U2.FIRST_NAME"), rst.getString("U2.LAST_NAME"));
                 UsersPair pair = new UsersPair(user1, user2);
-                rst.close();
 
                 rst = stmt.executeQuery(
-                    "SELECT U.FIRST_NAME, U.LAST_NAME, MF.MF_ID " +
+                    "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID" +
                     "FROM " + UsersTable + " U " +
                     "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
                     "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id + " "
                 );
                 
                 while (rst.next()) {
-                    Long mutualFriendId = rst.getLong("USER_ID");
+                    Long mutualFriendId = rst.getLong("MF_ID");
                     UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
                     pair.addSharedFriend(mutualFriend);
                     
