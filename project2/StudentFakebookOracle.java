@@ -587,7 +587,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "FROM " + EventsTable + " E " +
                 "JOIN " + CitiesTable + " C ON E.EVENT_CITY_ID = C.CITY_ID " +
                 "GROUP BY C.STATE_NAME " +
-                "ORDER BY count DESC, S.STATE_NAME ASC"
+                "ORDER BY count DESC, C.STATE_NAME ASC"
             );
 
             if (rst.next()) {
