@@ -476,6 +476,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 results.add(up);
             */
             
+            long startTime = System.currentTimeMillis();
             // Create or replace a bidirectional friendship view to simplify querying mutual friends
             stmt.executeUpdate(
                 "CREATE OR REPLACE VIEW BidirectionalFriends AS " +
@@ -483,8 +484,12 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "UNION " +
                 "SELECT USER2_ID AS USER_ID1, USER1_ID AS USER_ID2 FROM " + FriendsTable
             );
+            long endTime = System.currentTimeMillis();
+            long elapsedTime = endTime - startTime;
+            System.out.println("1. Elapsed time in milliseconds: " + elapsedTime);
 
             // Find pairs of users who have mutual friends but are not friends themselves
+            startTime = System.currentTimeMillis();
             stmt.executeUpdate( 
                 "CREATE OR REPLACE VIEW mutualFriends AS " + 
                 "SELECT BF1.USER_ID1 AS USER1_ID, BF2.USER_ID1 AS USER2_ID, BF1.USER_ID2 AS MF_ID " +
@@ -495,7 +500,12 @@ public final class StudentFakebookOracle extends FakebookOracle {
                                 "WHERE (F.USER1_ID = BF1.USER_ID1 AND F.USER2_ID = BF2.USER_ID1) " + 
                                 "OR (F.USER1_ID = BF2.USER_ID1 AND F.USER2_ID = BF1.USER_ID1)) " 
             );
+            endTime = System.currentTimeMillis();
+            elapsedTime = endTime - startTime;
+            System.out.println("2. Elapsed time in milliseconds: " + elapsedTime);
+
             
+            startTime = System.currentTimeMillis();
             stmt.executeUpdate(
                 "CREATE OR REPLACE VIEW mutualFriendsCount AS " +
                 "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
@@ -503,13 +513,20 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "GROUP BY USER1_ID, USER2_ID " +
                 "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC" 
             );
+            endTime = System.currentTimeMillis();
+            elapsedTime = endTime - startTime;
+            System.out.println("3. Elapsed time in milliseconds: " + elapsedTime);
             
+            startTime = System.currentTimeMillis();
             ResultSet rst = stmt.executeQuery(
                 "SELECT DISTINCT USER1_ID, USER2_ID " +
                 "FROM MutualFriendsCount " +
                 "WHERE ROWNUM <= " + num + " " +
                 "ORDER BY USER1_ID ASC, USER2_ID ASC"
             );
+            endTime = System.currentTimeMillis();
+            elapsedTime = endTime - startTime;
+            System.out.println("4. Elapsed time in milliseconds: " + elapsedTime);
 
 
             ArrayList<Long> user1List = new ArrayList<>();
