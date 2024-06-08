@@ -496,9 +496,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "FROM BidirectionalFriends BF1, BidirectionalFriends BF2 " +
                 "WHERE BF1.USER_ID1 != BF2.USER_ID1 AND BF1.USER_ID2 = BF2.USER_ID2 " +
                 "AND BF1.USER_ID1 < BF2.USER_ID1 " +
-                "AND NOT EXISTS (SELECT 1 FROM " + FriendsTable + " F " +
-                                "WHERE (F.USER1_ID = BF1.USER_ID1 AND F.USER2_ID = BF2.USER_ID1) " + 
-                                "OR (F.USER1_ID = BF2.USER_ID1 AND F.USER2_ID = BF1.USER_ID1)) " 
+                "AND BF1.USER_ID1 NOT IN (SELECT USER1_ID FROM " + FriendsTable + " WHERE USER2_ID = BF2.USER_ID1) "
             );
             endTime = System.currentTimeMillis();
             elapsedTime = endTime - startTime;
