@@ -611,7 +611,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 
                 System.err.println("No events found");
                 return new EventStateInfo(-1);
-                
+
             }
 
         } catch (SQLException e) {
@@ -699,6 +699,42 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 SiblingInfo si = new SiblingInfo(u1, u2);
                 results.add(si);
             */
+
+            stmt.executeUpdate(
+                "CREATE OR REPLACE VIEW SiblingCandidates AS " +
+                "SELECT U1.USER_ID AS USER1_ID, U2.USER_ID AS USER2_ID, U1.FIRST_NAME AS FN1, U1.LAST_NAME AS LN1, U2.FIRST_NAME AS FN2, U2.LAST_NAME AS LN2 " +
+                "FROM " + UsersTable + " U1, " + UsersTable + " U2, " + FriendsTable + " F, " + HometownCitiesTable + " HC1, " + HometownCitiesTable + " HC2 " +
+                "WHERE U1.LAST_NAME = U2.LAST_NAME AND U1.USER_ID < U2.USER_ID " +
+                "AND U1.USER_ID = F.USER1_ID AND U2.USER_ID = F.USER2_ID " +
+                "AND U1.USER_ID = HC1.USER_ID AND U2.USER_ID = HC2.USER_ID " +
+                "AND HC1.HOMETOWN_CITY_ID = HC2.HOMETOWN_CITY_ID " +
+                "AND ABS(U1.YEAR_OF_BIRTH - U2.YEAR_OF_BIRTH) < 10" +
+                "ORDER BY U1.USER_ID ASC, U2.USER_ID ASC"
+            );
+
+            ResultSet rst = stmt.executeQuery(
+                "SELECT USER1_ID, USER2_ID, FN1, LN1, FN2, LN2 " +
+                "FROM SiblingCandidates "
+            );
+
+            while (rst.next()) {
+                Long user1Id = rst.getLong("USER1_ID");
+                Long user2Id = rst.getLong("USER2_ID");
+                String user1FirstName = rst.getString("FN1");
+                String user1LastName = rst.getString("LN1");
+                String user2FirstName = rst.getString("FN2");
+                String user2LastName = rst.getString("LN2");
+
+                UserInfo user1 = new UserInfo(user1Id, user1FirstName, user1LastName);
+                UserInfo user2 = new UserInfo(user2Id, user2FirstName, user2LastName);
+                results.add(new SiblingInfo(user1, user2));
+            }
+
+            rst.close();
+            stmt.executeUpdate("DROP VIEW SiblingCandidates");
+            stmt.close();
+            
+
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
