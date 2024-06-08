@@ -540,9 +540,8 @@ public final class StudentFakebookOracle extends FakebookOracle {
 
                 rst = stmt.executeQuery(
                     "SELECT U.FIRST_NAME AS FIRST_NAME, U.LAST_NAME AS LAST_NAME, MF.MF_ID AS MF_ID " +
-                    "FROM " + UsersTable + " U " +
-                    "JOIN mutualFriends MF ON U.USER_ID = MF.MF_ID " +  
-                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id +
+                    "FROM " + UsersTable + " U, mutualFriends MF " +  
+                    "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id + " AND U.USER_ID = MF.MF_ID " +
                     "ORDER BY MF_ID ASC"
                 );
 
