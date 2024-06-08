@@ -583,22 +583,37 @@ public final class StudentFakebookOracle extends FakebookOracle {
             */
             
             ResultSet rst = stmt.executeQuery(
-                "SELECT C.STATE_NAME AS STATE_NAME, COUNT(*) AS count " +
+                "SELECT DISTINCT C.STATE_NAME AS STATE_NAME, COUNT(*) AS count " +
                 "FROM " + EventsTable + " E " +
                 "JOIN " + CitiesTable + " C ON E.EVENT_CITY_ID = C.CITY_ID " +
                 "GROUP BY C.STATE_NAME " +
                 "ORDER BY count DESC, S.STATE_NAME ASC"
             );
 
-            while (rst.next()) {
-                EventStateInfo info = new EventStateInfo(rst.getLong("count"));
-                info.addState(rst.getString("STATE_NAME"));    
+            if (rst.next()) {
+                int maxCount = rst.getInt("count");
+                EventStateInfo info = new EventStateInfo(maxCount);
+        
+                rst.beforeFirst();
+                while (rst.next() && rst.getInt("count") == maxCount) {
+                    
+                    info.addState(rst.getString("STATE_NAME"));    
+    
+    
+                }
+
+                return info;
+
+            } else {
+                return new EventStateInfo(-1);
+                System.err.println("No events found");
             }
+        
 
             rst.close();
             stmt.close();
             
-
+            re
 
         } catch (SQLException e) {
             System.err.println(e.getMessage());
