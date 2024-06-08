@@ -496,14 +496,17 @@ public final class StudentFakebookOracle extends FakebookOracle {
                                 "OR (F.USER1_ID = BF2.USER_ID1 AND F.USER2_ID = BF1.USER_ID1)) " 
             );
             
+            stmt.executeUpdate(
+                "CREATE OR REPLACE VIEW mutualFriendsCount AS " +
+                "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
+                "FROM mutualFriends " +
+                "GROUP BY USER1_ID, USER2_ID " +
+                "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " 
+            );
             
             ResultSet rst = stmt.executeQuery(
                 "SELECT DISTINCT USER1_ID, USER2_ID " +
-                "FROM (" +
-                    "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
-                    "FROM mutualFriends " +
-                    "GROUP BY USER1_ID, USER2_ID " +
-                    "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " +
+                "FROM MutualFriendsCount " +
                 "WHERE ROWNUM <= " + num + " " +
                 "ORDER BY USER1_ID ASC, USER2_ID ASC"
             );
@@ -542,6 +545,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                     "WHERE MF.USER1_ID = " + user1Id + " AND MF.USER2_ID = " + user2Id +
                     "ORDER BY MF_ID ASC"
                 );
+
                 while (rst.next()) {
                     Long mutualFriendId = rst.getLong("MF_ID");
                     UserInfo mutualFriend = new UserInfo(mutualFriendId, rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
@@ -733,7 +737,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
             rst.close();
             stmt.executeUpdate("DROP VIEW SiblingCandidates");
             stmt.close();
-            
+
 
         } catch (SQLException e) {
             System.err.println(e.getMessage());
