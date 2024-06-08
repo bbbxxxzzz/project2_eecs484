@@ -602,18 +602,17 @@ public final class StudentFakebookOracle extends FakebookOracle {
     
                 }
 
+                rst.close();
+                stmt.close();
+
                 return info;
 
             } else {
-                return new EventStateInfo(-1);
+                
                 System.err.println("No events found");
-            }
-        
+                return new EventStateInfo(-1);
 
-            rst.close();
-            stmt.close();
-            
-            re
+            }
 
         } catch (SQLException e) {
             System.err.println(e.getMessage());
