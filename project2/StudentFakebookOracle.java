@@ -501,7 +501,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 "SELECT USER1_ID, USER2_ID, COUNT(*) AS countMutual " +
                 "FROM mutualFriends " +
                 "GROUP BY USER1_ID, USER2_ID " +
-                "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC) " 
+                "ORDER BY countMutual DESC, USER1_ID ASC, USER2_ID ASC" 
             );
             
             ResultSet rst = stmt.executeQuery(
