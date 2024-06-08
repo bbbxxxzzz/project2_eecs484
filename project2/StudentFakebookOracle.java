@@ -611,7 +611,7 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 
                 System.err.println("No events found");
                 return new EventStateInfo(-1);
-
+                
             }
 
         } catch (SQLException e) {
@@ -637,7 +637,41 @@ public final class StudentFakebookOracle extends FakebookOracle {
                 UserInfo young = new UserInfo(80000000, "Neil", "deGrasse Tyson");
                 return new AgeInfo(old, young);
             */
-            return new AgeInfo(new UserInfo(-1, "UNWRITTEN", "UNWRITTEN"), new UserInfo(-1, "UNWRITTEN", "UNWRITTEN")); // placeholder for compilation
+
+            stmt.executeUpdate(
+                "CREATE OR REPLACE VIEW BidirectionalFriends AS " +
+                "SELECT USER1_ID AS USER_ID1, USER2_ID AS USER_ID2 FROM " + FriendsTable + " " +
+                "UNION " +
+                "SELECT USER2_ID AS USER_ID1, USER1_ID AS USER_ID2 FROM " + FriendsTable
+            );
+
+            ResultSet rst = stmt.executeQuery(
+                "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                "FROM " + UsersTable + " U " +
+                "JOIN BidirectionalFriends BF ON U.USER_ID = BF.USER_ID2 " +
+                "WHERE BF.USER_ID1 = " + userID + " " +
+                "ORDER BY U.YEAR_OF_BIRTH ASC, U.MONTH_OF_BIRTH ASC, U.DAY_OF_BIRTH ASC, U.USER_ID DESC"
+            );
+
+            rst.next();
+            UserInfo old = new UserInfo(rst.getLong("USER_ID"), rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
+            
+            rst = stmt.executeQuery(
+                "SELECT U.USER_ID, U.FIRST_NAME, U.LAST_NAME " +
+                "FROM " + UsersTable + " U " +
+                "JOIN BidirectionalFriends BF ON U.USER_ID = BF.USER_ID2 " +
+                "WHERE BF.USER_ID1 = " + userID + " " +
+                "ORDER BY U.YEAR_OF_BIRTH DESC, U.MONTH_OF_BIRTH DESC, U.DAY_OF_BIRTH DESC, U.USER_ID DESC"
+            );
+
+            rst.next();
+            UserInfo young = new UserInfo(rst.getLong("USER_ID"), rst.getString("FIRST_NAME"), rst.getString("LAST_NAME"));
+            
+            rst.close();
+            stmt.executeUpdate("DROP VIEW BidirectionalFriends");
+            stmt.close();
+
+            return new AgeInfo(old, young); // placeholder for compilation
         } catch (SQLException e) {
             System.err.println(e.getMessage());
             return new AgeInfo(new UserInfo(-1, "ERROR", "ERROR"), new UserInfo(-1, "ERROR", "ERROR"));
